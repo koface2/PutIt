@@ -7,12 +7,12 @@ import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc
 
 // 🔥 PASTE YOUR FIREBASE CONFIG HERE 🔥
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
+  apiKey: "AIzaSyAfDUhdxBH7cEtJ70X_Ufrm0f0n_DNAUUo",
+  authDomain: "putit-92fd8.firebaseapp.com",
+  projectId: "putit-92fd8",
+  storageBucket: "putit-92fd8.firebasestorage.app",
+  messagingSenderId: "267872873156",
+  appId: "1:267872873156:web:4d379f1f228a0765183791"
 };
 
 const app = initializeApp(firebaseConfig);
