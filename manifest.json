@@ -3,9 +3,9 @@
   "name": "PutIt",
   "icons": [
     {
-      "src": "/icon.svg",
+      "src": "/PutIt_Icon.png",
       "sizes": "any",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],

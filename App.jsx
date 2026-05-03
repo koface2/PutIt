@@ -180,7 +180,7 @@ export default function App() {
   if (isLoading) return <div className="min-h-screen bg-[#FFFBFB] flex flex-col items-center justify-center text-pink-400"><Loader2 className="w-10 h-10 animate-spin mb-4" /><p className="font-bold tracking-wider uppercase text-xs">Loading...</p></div>;
   if (!user) return (
     <div className="min-h-screen bg-[#FFFBFB] flex flex-col items-center justify-center p-6 text-center">
-      <div className="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mb-6 shadow-sm"><Heart className="w-10 h-10 text-pink-400 fill-pink-400" /></div>
+      <img src="/PutIt_Icon.png" alt="PutIt" className="w-24 h-24 rounded-3xl mb-6 shadow-md" />
       <h1 className="text-3xl font-extrabold tracking-tight text-stone-800 mb-2">Welcome to PutIt</h1>
       <p className="text-sm text-stone-500 font-medium mb-10">Organize your beautiful space.</p>
       {authError && <div className="bg-red-50 text-red-500 p-3 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold mb-6 w-full max-w-sm"><AlertCircle className="w-4 h-4" /> {authError}</div>}
@@ -198,7 +198,8 @@ export default function App() {
       <header className="px-6 pt-12 pb-4 sticky top-0 z-10 flex justify-between items-end bg-[#FFFBFB]/80 backdrop-blur-xl">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-stone-800 flex items-center gap-2">
-            PutIt <Sparkles className="w-5 h-5 text-pink-400" />
+            <img src="/PutIt_Icon.png" alt="PutIt" className="w-8 h-8 rounded-xl" />
+            PutIt
           </h1>
           <p className="text-[10px] text-pink-500 font-bold mt-1 tracking-widest uppercase flex items-center gap-1">
             <Users className="w-3 h-3" /> {isLinkedToPartner ? 'Linked Household' : 'My Household'}
