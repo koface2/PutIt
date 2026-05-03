@@ -5,14 +5,13 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut } from 'firebase/auth';
 import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
-// 🔥 PASTE YOUR FIREBASE CONFIG HERE 🔥
 const firebaseConfig = {
-  apiKey: "AIzaSyAfDUhdxBH7cEtJ70X_Ufrm0f0n_DNAUUo",
-  authDomain: "putit-92fd8.firebaseapp.com",
-  projectId: "putit-92fd8",
-  storageBucket: "putit-92fd8.firebasestorage.app",
-  messagingSenderId: "267872873156",
-  appId: "1:267872873156:web:4d379f1f228a0765183791"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
 const app = initializeApp(firebaseConfig);
@@ -182,7 +181,7 @@ export default function App() {
   if (!user) return (
     <div className="min-h-screen bg-[#FFFBFB] flex flex-col items-center justify-center p-6 text-center">
       <div className="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mb-6 shadow-sm"><Heart className="w-10 h-10 text-pink-400 fill-pink-400" /></div>
-      <h1 className="text-3xl font-extrabold tracking-tight text-stone-800 mb-2">Welcome to Catalog</h1>
+      <h1 className="text-3xl font-extrabold tracking-tight text-stone-800 mb-2">Welcome to PutIt</h1>
       <p className="text-sm text-stone-500 font-medium mb-10">Organize your beautiful space.</p>
       {authError && <div className="bg-red-50 text-red-500 p-3 rounded-xl flex items-center justify-center gap-2 text-sm font-semibold mb-6 w-full max-w-sm"><AlertCircle className="w-4 h-4" /> {authError}</div>}
       <button onClick={handleGoogleLogin} className="w-full max-w-sm bg-white border border-pink-100 hover:bg-pink-50 text-stone-700 font-bold py-4 rounded-2xl flex justify-center items-center gap-3 transition-all active:scale-[0.98] mb-4 shadow-sm">
@@ -199,7 +198,7 @@ export default function App() {
       <header className="px-6 pt-12 pb-4 sticky top-0 z-10 flex justify-between items-end bg-[#FFFBFB]/80 backdrop-blur-xl">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-stone-800 flex items-center gap-2">
-            Catalog <Sparkles className="w-5 h-5 text-pink-400" />
+            PutIt <Sparkles className="w-5 h-5 text-pink-400" />
           </h1>
           <p className="text-[10px] text-pink-500 font-bold mt-1 tracking-widest uppercase flex items-center gap-1">
             <Users className="w-3 h-3" /> {isLinkedToPartner ? 'Linked Household' : 'My Household'}
@@ -329,7 +328,7 @@ export default function App() {
                 </div>
                 <button onClick={handleSaveItem} disabled={isSaving} className="w-full bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 transition-all active:scale-[0.98] mt-2 shadow-lg shadow-pink-200/50 disabled:opacity-70">
                   {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
-                  {isSaving ? 'Saving...' : 'Save to Catalog'}
+                  {isSaving ? 'Saving...' : 'Save to PutIt'}
                 </button>
               </div>
             </div>
@@ -380,14 +379,14 @@ export default function App() {
                 <div className="bg-purple-50 p-4 rounded-[1.5rem] border border-purple-100 text-center">
                   <p className="text-sm font-bold text-purple-700 mb-3">You are currently syncing with someone else's catalog.</p>
                   <button onClick={handleLeaveHousehold} className="bg-white border border-purple-200 text-purple-600 font-bold py-2 px-4 rounded-xl text-xs hover:bg-purple-100 transition-colors">
-                    Disconnect & Return to My Catalog
+                    Disconnect & Return to My PutIt
                   </button>
                 </div>
               )}
 
               {!isLinkedToPartner && (
                 <div className="pt-4 border-t border-pink-50">
-                  <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-widest mb-2">Join a Partner's Catalog</label>
+                  <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-widest mb-2">Join a Partner's PutIt</label>
                   <div className="flex gap-2">
                     <input type="text" placeholder="Paste their Sync Code here" value={syncInput} onChange={(e) => setSyncInput(e.target.value)} className="flex-1 bg-[#FFFBFB] border border-pink-100 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:bg-white text-xs font-semibold text-stone-700 font-mono" />
                     <button onClick={handleJoinHousehold} disabled={!syncInput.trim()} className="bg-stone-800 text-white font-bold px-4 rounded-xl text-xs disabled:opacity-50 hover:bg-stone-700 transition-colors">Join</button>
