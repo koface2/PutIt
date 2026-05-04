@@ -3,7 +3,7 @@ import { Camera, Search, Home, Plus, MapPin, Tag, X, Check, Image as ImageIcon, 
 
 import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut } from 'firebase/auth';
-import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -16,7 +16,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db = initializeFirestore(app, { localCache: persistentLocalCache() });
 
 const compressImage = (file, maxWidth = 800) => {
   return new Promise((resolve) => {
@@ -49,6 +49,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [syncInput, setSyncInput] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
+  const [joinSuccess, setJoinSuccess] = useState(false);
 
   const [activeTab, setActiveTab] = useState('home');
   const [items, setItems] = useState([]);
@@ -58,6 +59,7 @@ export default function App() {
   
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
+  const imagePreviewUrlRef = useRef(null);
 
   const [newItem, setNewItem] = useState({ name: '', location: '', details: '', tags: '', imagePreview: null, imageFile: null });
   const [locSuggestionsOpen, setLocSuggestionsOpen] = useState(false);
@@ -69,6 +71,7 @@ export default function App() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const allTags = useMemo(() => [...new Set(items.flatMap(i => i.tags || []))], [items]);
+  const locationItems = useMemo(() => activeLocation ? items.filter(i => i.location === activeLocation) : [], [items, activeLocation]);
   const currentTagInput = newItem.tags.split(',').pop().trim().toLowerCase();
   const currentTagSuggestions = useMemo(() => {
     if (!currentTagInput) return [];
@@ -88,6 +91,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    return () => {
+      if (imagePreviewUrlRef.current) URL.revokeObjectURL(imagePreviewUrlRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!user || !activeHousehold) return;
     const itemsRef = collection(db, 'households', activeHousehold, 'items');
     const unsubscribe = onSnapshot(itemsRef, (snapshot) => {
@@ -100,7 +109,7 @@ export default function App() {
     return () => unsubscribe();
   }, [user, activeHousehold]);
 
-  const handleGoogleLogin = async () => { try { setAuthError(''); await signInWithPopup(auth, new GoogleAuthProvider()); } catch (error) { setAuthError("Could not sign in with Google."); } };
+  const handleGoogleLogin = async () => { try { setAuthError(''); await signInWithPopup(auth, new GoogleAuthProvider()); } catch (error) { setAuthError(error.code === 'auth/popup-blocked' ? 'Popup was blocked. Please allow popups for this site.' : 'Could not sign in with Google.'); } };
   const handleGuestLogin = async () => { try { setAuthError(''); await signInAnonymously(auth); } catch (error) { setAuthError("Could not sign in as guest."); } };
   const handleLogout = () => { setShowSettings(false); signOut(auth); };
 
@@ -111,13 +120,13 @@ export default function App() {
   };
 
   const handleJoinHousehold = () => {
-    if (syncInput.trim().length > 5) {
-      const newHousehold = syncInput.trim();
-      setActiveHousehold(newHousehold);
-      localStorage.setItem(`household_${user.uid}`, newHousehold);
+    const trimmed = syncInput.trim();
+    if (/^[a-zA-Z0-9_-]{20,}$/.test(trimmed)) {
+      setActiveHousehold(trimmed);
+      localStorage.setItem(`household_${user.uid}`, trimmed);
       setSyncInput('');
-      setShowSettings(false);
-      alert("Successfully linked to new household catalog! 🌸");
+      setJoinSuccess(true);
+      setTimeout(() => { setJoinSuccess(false); setShowSettings(false); }, 1200);
     }
   };
 
@@ -135,7 +144,13 @@ export default function App() {
 
   const handlePhotoCapture = (e) => {
     const file = e.target.files[0];
-    if (file) { setNewItem({ ...newItem, imagePreview: URL.createObjectURL(file), imageFile: file }); setErrorMsg(''); }
+    if (file) {
+      if (imagePreviewUrlRef.current) URL.revokeObjectURL(imagePreviewUrlRef.current);
+      const url = URL.createObjectURL(file);
+      imagePreviewUrlRef.current = url;
+      setNewItem({ ...newItem, imagePreview: url, imageFile: file });
+      setErrorMsg('');
+    }
   };
 
   const handleSaveItem = async () => {
@@ -149,6 +164,7 @@ export default function App() {
       const itemId = Date.now().toString();
       const itemToSave = { name: newItem.name, location: newItem.location, details: newItem.details, tags: tagsArray, imageUrl: secureBase64Image, createdAt: Date.now() };
       await setDoc(doc(db, 'households', activeHousehold, 'items', itemId), itemToSave);
+      if (imagePreviewUrlRef.current) { URL.revokeObjectURL(imagePreviewUrlRef.current); imagePreviewUrlRef.current = null; }
       setNewItem({ name: '', location: '', details: '', tags: '', imagePreview: null, imageFile: null });
       setActiveTab('home');
     } catch (error) { setErrorMsg("Couldn't save item. Check connection."); } 
@@ -219,16 +235,16 @@ export default function App() {
               <button onClick={() => setActiveLocation(null)} className="p-2 -ml-2 rounded-full hover:bg-pink-50 text-stone-500 transition-colors"><ChevronLeft className="w-6 h-6" /></button>
               <div>
                 <h2 className="text-2xl font-extrabold text-stone-800 tracking-tight flex items-center gap-2"><MapPin className="w-5 h-5 text-pink-400" />{activeLocation}</h2>
-                <p className="text-xs text-stone-400 font-medium mt-0.5">{items.filter(i => i.location === activeLocation).length} item{items.filter(i => i.location === activeLocation).length !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-stone-400 font-medium mt-0.5">{locationItems.length} item{locationItems.length !== 1 ? 's' : ''}</p>
               </div>
             </div>
             <div className="grid gap-3.5">
-              {items.filter(i => i.location === activeLocation).length === 0 ? (
+              {locationItems.length === 0 ? (
                 <div className="bg-pink-50/50 rounded-2xl p-6 text-center border border-pink-100 border-dashed">
                   <p className="text-sm text-stone-500 font-medium">No items in {activeLocation} yet.</p>
                   <button onClick={() => setActiveTab('add')} className="mt-3 text-pink-500 font-bold text-xs uppercase tracking-wider">Add an item</button>
                 </div>
-              ) : items.filter(i => i.location === activeLocation).map(item => <ItemCard key={item.id} item={item} onEdit={openEdit} />)}
+              ) : locationItems.map(item => <ItemCard key={item.id} item={item} onEdit={openEdit} />)}
             </div>
           </div>
         )}
@@ -413,7 +429,7 @@ export default function App() {
                   <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-widest mb-2">Join a Partner's PutIt</label>
                   <div className="flex gap-2">
                     <input type="text" placeholder="Paste their Sync Code here" value={syncInput} onChange={(e) => setSyncInput(e.target.value)} className="flex-1 bg-[#FFFBFB] border border-pink-100 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:bg-white text-xs font-semibold text-stone-700 font-mono" />
-                    <button onClick={handleJoinHousehold} disabled={!syncInput.trim()} className="bg-stone-800 text-white font-bold px-4 rounded-xl text-xs disabled:opacity-50 hover:bg-stone-700 transition-colors">Join</button>
+                    <button onClick={handleJoinHousehold} disabled={!syncInput.trim()} className={`font-bold px-4 rounded-xl text-xs disabled:opacity-50 transition-colors text-white ${joinSuccess ? 'bg-green-400' : 'bg-stone-800 hover:bg-stone-700'}`}>{joinSuccess ? <Check className="w-4 h-4" /> : 'Join'}</button>
                   </div>
                 </div>
               )}

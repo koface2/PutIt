@@ -1,16 +1,27 @@
 {
+  "id": "/",
   "short_name": "PutIt",
   "name": "PutIt",
+  "description": "Stop searching. Start living. Track where you put your things.",
+  "lang": "en",
   "icons": [
     {
       "src": "/PutIt_Icon.png",
       "sizes": "any",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/PutIt_Icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "theme_color": "#FFFBFB",
-  "background_color": "#FFFBFB"
+  "background_color": "#FFFBFB",
+  "categories": ["utilities", "productivity"]
 }
