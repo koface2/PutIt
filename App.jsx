@@ -52,7 +52,8 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState('home');
   const [items, setItems] = useState([]);
-  const [locations, setLocations] = useState(['Closet', 'Vanity', 'Jewelry Box', 'Safe', 'Kitchen']);
+  const [locations, setLocations] = useState(['Kitchen', 'Basement', 'Office', 'Bedroom']);
+  const [activeLocation, setActiveLocation] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   
   const cameraInputRef = useRef(null);
@@ -212,7 +213,27 @@ export default function App() {
       </header>
 
       <main className="max-w-2xl mx-auto w-full px-5 pt-4">
-        {activeTab === 'home' && (
+        {activeTab === 'home' && activeLocation && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center gap-3 px-1">
+              <button onClick={() => setActiveLocation(null)} className="p-2 -ml-2 rounded-full hover:bg-pink-50 text-stone-500 transition-colors"><ChevronLeft className="w-6 h-6" /></button>
+              <div>
+                <h2 className="text-2xl font-extrabold text-stone-800 tracking-tight flex items-center gap-2"><MapPin className="w-5 h-5 text-pink-400" />{activeLocation}</h2>
+                <p className="text-xs text-stone-400 font-medium mt-0.5">{items.filter(i => i.location === activeLocation).length} item{items.filter(i => i.location === activeLocation).length !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <div className="grid gap-3.5">
+              {items.filter(i => i.location === activeLocation).length === 0 ? (
+                <div className="bg-pink-50/50 rounded-2xl p-6 text-center border border-pink-100 border-dashed">
+                  <p className="text-sm text-stone-500 font-medium">No items in {activeLocation} yet.</p>
+                  <button onClick={() => setActiveTab('add')} className="mt-3 text-pink-500 font-bold text-xs uppercase tracking-wider">Add an item</button>
+                </div>
+              ) : items.filter(i => i.location === activeLocation).map(item => <ItemCard key={item.id} item={item} onEdit={openEdit} />)}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'home' && !activeLocation && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className={`bg-gradient-to-br ${isLinkedToPartner ? 'from-purple-400 to-indigo-400' : 'from-pink-400 to-rose-400'} rounded-[2rem] p-7 text-white shadow-xl shadow-pink-200/50 relative overflow-hidden transition-colors duration-500`}>
               <div className="absolute -right-4 -top-4 p-8 opacity-10"><Heart className="w-48 h-48 fill-white" /></div>
@@ -220,7 +241,9 @@ export default function App() {
                 <h2 className="text-white/80 font-bold text-[10px] uppercase tracking-[0.2em] mb-1">Total Items</h2>
                 <div className="text-6xl font-semibold tracking-tight">{items.length}</div>
                 <div className="mt-8 flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-                  {locations.slice(0, 4).map(loc => <span key={loc} className="bg-white/20 backdrop-blur-md border border-white/20 px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap tracking-wide">{loc}</span>)}
+                  {locations.slice(0, 4).map(loc => (
+                    <button key={loc} onClick={() => setActiveLocation(loc)} className="bg-white/20 backdrop-blur-md border border-white/20 px-4 py-1.5 rounded-full text-[11px] font-semibold whitespace-nowrap tracking-wide hover:bg-white/30 active:scale-95 transition-all">{loc}</button>
+                  ))}
                 </div>
               </div>
             </div>
@@ -339,9 +362,9 @@ export default function App() {
 
       <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-sm bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl shadow-pink-100/60 z-50 overflow-hidden border border-pink-50">
         <div className="flex justify-around items-center px-3 py-2.5">
-          <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center p-3 rounded-2xl transition-all duration-300 ${activeTab === 'home' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Home className="w-5 h-5" /></button>
-          <button onClick={() => setActiveTab('add')} className={`flex items-center justify-center p-3 rounded-2xl transition-all duration-300 ${activeTab === 'add' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Plus className="w-6 h-6" /></button>
-          <button onClick={() => setActiveTab('search')} className={`flex flex-col items-center p-3 rounded-2xl transition-all duration-300 ${activeTab === 'search' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Search className="w-5 h-5" /></button>
+          <button onClick={() => { setActiveTab('home'); setActiveLocation(null); }} className={`flex flex-col items-center p-3 rounded-2xl transition-all duration-300 ${activeTab === 'home' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Home className="w-5 h-5" /></button>
+          <button onClick={() => { setActiveTab('add'); setActiveLocation(null); }} className={`flex items-center justify-center p-3 rounded-2xl transition-all duration-300 ${activeTab === 'add' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Plus className="w-6 h-6" /></button>
+          <button onClick={() => { setActiveTab('search'); setActiveLocation(null); }} className={`flex flex-col items-center p-3 rounded-2xl transition-all duration-300 ${activeTab === 'search' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Search className="w-5 h-5" /></button>
         </div>
       </nav>
 
