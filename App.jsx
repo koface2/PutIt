@@ -47,7 +47,10 @@ export default function App() {
 
   if (!user) return (
     <main className="min-h-screen bg-[#FFFBFB] flex flex-col items-center justify-center p-6 text-center">
-      <img src="/PutIt_Icon.png" alt="PutIt" className="w-24 h-24 rounded-3xl mb-6 shadow-md" width="96" height="96" />
+      <picture>
+        <source srcSet="/PutIt_Icon_display.webp" type="image/webp" />
+        <img src="/PutIt_Icon_192.png" alt="PutIt" className="w-24 h-24 rounded-3xl mb-6 shadow-md" width="96" height="96" />
+      </picture>
       <h1 className="text-3xl font-extrabold tracking-tight text-stone-800 mb-2">PutIt</h1>
       <p className="text-sm text-stone-500 font-medium mb-10">Stop searching. Start living.</p>
       {authError && (

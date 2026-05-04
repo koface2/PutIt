@@ -174,7 +174,10 @@ export default function AuthenticatedApp({ user }) {
       <header className="px-6 pt-12 pb-4 sticky top-0 z-10 flex justify-between items-end bg-[#FFFBFB]/80 backdrop-blur-xl">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-stone-800 flex items-center gap-2">
-            <img src="/PutIt_Icon.png" alt="PutIt" className="w-8 h-8 rounded-xl" width="32" height="32" />
+            <picture>
+              <source srcSet="/PutIt_Icon_display.webp" type="image/webp" />
+              <img src="/PutIt_Icon_192.png" alt="PutIt" className="w-8 h-8 rounded-xl" width="32" height="32" />
+            </picture>
             PutIt
           </h1>
           <p className="text-[10px] text-pink-500 font-bold mt-1 tracking-widest uppercase flex items-center gap-1">

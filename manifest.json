@@ -6,15 +6,21 @@
   "lang": "en",
   "icons": [
     {
-      "src": "/PutIt_Icon.png",
-      "sizes": "any",
+      "src": "/PutIt_Icon_192.png",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/PutIt_Icon.png",
+      "src": "/PutIt_Icon_512.webp",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/webp",
+      "purpose": "any"
+    },
+    {
+      "src": "/PutIt_Icon_512.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
       "purpose": "maskable"
     }
   ],
