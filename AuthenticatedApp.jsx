@@ -33,6 +33,9 @@ export default function AuthenticatedApp({ user }) {
   const [activeHousehold, setActiveHousehold] = useState(
     () => localStorage.getItem(`household_${user.uid}`) || user.uid
   );
+  const [householdName, setHouseholdName] = useState(
+    () => localStorage.getItem(`householdName_${user.uid}`) || ''
+  );
   const [showSettings, setShowSettings] = useState(false);
   const [syncInput, setSyncInput] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
@@ -206,7 +209,7 @@ export default function AuthenticatedApp({ user }) {
             PutIt
           </h1>
           <p className="text-[10px] text-pink-500 font-bold mt-1 tracking-widest uppercase flex items-center gap-1">
-            <Users className="w-3 h-3" /> {isLinkedToPartner ? 'Linked Household' : 'My Household'}
+            <Users className="w-3 h-3" /> {isLinkedToPartner ? 'Linked Household' : (householdName || 'My Household')}
           </p>
         </div>
         <button onClick={() => setShowSettings(true)} aria-label="Open settings" className="h-11 w-11 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center font-bold text-sm tracking-wider shadow-sm border border-pink-200/50 overflow-hidden relative hover:scale-105 transition-transform">
@@ -368,10 +371,10 @@ export default function AuthenticatedApp({ user }) {
       </main>
 
       <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-sm bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl shadow-pink-100/60 z-50 overflow-hidden border border-pink-50" aria-label="Main navigation">
-        <div className="flex justify-around items-center px-3 py-2.5">
-          <button onClick={() => { setActiveTab('home'); setActiveLocation(null); }} aria-label="Home" className={`flex flex-col items-center p-3 rounded-2xl transition-all duration-300 ${activeTab === 'home' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Home className="w-5 h-5" /></button>
-          <button onClick={() => { setActiveTab('add'); setActiveLocation(null); }} aria-label="Add item" className={`flex items-center justify-center p-3 rounded-2xl transition-all duration-300 ${activeTab === 'add' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Plus className="w-6 h-6" /></button>
-          <button onClick={() => { setActiveTab('search'); setActiveLocation(null); }} aria-label="Search" className={`flex flex-col items-center p-3 rounded-2xl transition-all duration-300 ${activeTab === 'search' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Search className="w-5 h-5" /></button>
+        <div className="flex justify-around items-center px-4 py-4">
+          <button onClick={() => { setActiveTab('home'); setActiveLocation(null); }} aria-label="Home" className={`flex flex-col items-center p-4 rounded-2xl transition-all duration-300 ${activeTab === 'home' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Home className="w-6 h-6" /></button>
+          <button onClick={() => { setActiveTab('add'); setActiveLocation(null); }} aria-label="Add item" className={`flex items-center justify-center p-4 rounded-2xl transition-all duration-300 ${activeTab === 'add' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Plus className="w-7 h-7" /></button>
+          <button onClick={() => { setActiveTab('search'); setActiveLocation(null); }} aria-label="Search" className={`flex flex-col items-center p-4 rounded-2xl transition-all duration-300 ${activeTab === 'search' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Search className="w-6 h-6" /></button>
         </div>
       </nav>
 
@@ -393,6 +396,20 @@ export default function AuthenticatedApp({ user }) {
                 <p className="text-xs text-stone-400 uppercase tracking-widest font-bold mt-1">
                   {isLinkedToPartner ? 'Linked to Partner Account' : 'Main Account'}
                 </p>
+              </div>
+
+              <div className="pt-4 border-t border-pink-50">
+                <label className="block text-[11px] font-bold text-pink-400 uppercase tracking-widest mb-2">Household Name</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Smith Family"
+                  value={householdName}
+                  onChange={(e) => {
+                    setHouseholdName(e.target.value);
+                    localStorage.setItem(`householdName_${user.uid}`, e.target.value);
+                  }}
+                  className="w-full bg-[#FFFBFB] border border-pink-100 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:bg-white text-sm font-semibold text-stone-700"
+                />
               </div>
 
               {!isLinkedToPartner ? (
