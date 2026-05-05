@@ -169,6 +169,31 @@ export default function AuthenticatedApp({ user }) {
 
   const isLinkedToPartner = activeHousehold !== user.uid;
 
+  // Initialise history state on mount
+  useEffect(() => {
+    window.history.replaceState({ putit: false }, '');
+  }, []);
+
+  // Push a history entry when entering any sub-view so the back button works
+  useEffect(() => {
+    const inSubView = !!(editingItem || showSettings || activeLocation || activeTab !== 'home');
+    if (inSubView && !window.history.state?.putit) {
+      window.history.pushState({ putit: true }, '');
+    }
+  }, [editingItem, showSettings, activeLocation, activeTab]);
+
+  // Handle hardware / swipe back
+  useEffect(() => {
+    const handlePopState = () => {
+      if (editingItem) { setEditingItem(null); setShowDeleteConfirm(false); }
+      else if (showSettings) setShowSettings(false);
+      else if (activeLocation) setActiveLocation(null);
+      else if (activeTab !== 'home') setActiveTab('home');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [editingItem, showSettings, activeLocation, activeTab]);
+
   return (
     <div className="min-h-screen bg-[#FFFBFB] font-sans text-stone-800 pb-32 selection:bg-pink-200">
       <header className="px-6 pt-12 pb-4 sticky top-0 z-10 flex justify-between items-end bg-[#FFFBFB]/80 backdrop-blur-xl">
@@ -262,7 +287,7 @@ export default function AuthenticatedApp({ user }) {
 
         {activeTab === 'add' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="px-1"><h2 className="text-2xl font-extrabold text-stone-800 tracking-tight">New Treasure</h2></div>
+            <div className="px-1"><h2 className="text-2xl font-extrabold text-stone-800 tracking-tight">New Item</h2></div>
             <div className="space-y-5">
               <div className="bg-white p-2.5 rounded-[2rem] shadow-sm border border-pink-50">
                 <div className="relative bg-[#FFFBFB] rounded-[1.5rem] aspect-[3/4] flex flex-col items-center justify-center border-2 border-dashed border-pink-100 overflow-hidden">
@@ -412,7 +437,7 @@ export default function AuthenticatedApp({ user }) {
         <div className="fixed inset-0 bg-[#FFFBFB] z-[100] overflow-y-auto flex flex-col animate-in slide-in-from-bottom-8 duration-300 pb-safe" role="dialog" aria-modal="true" aria-label="Edit item">
           <header className="px-5 py-4 sticky top-0 z-10 flex justify-between items-center bg-[#FFFBFB]/90 backdrop-blur-xl border-b border-pink-50">
             <button onClick={() => setEditingItem(null)} aria-label="Close edit" className="p-2 -ml-2 rounded-full hover:bg-pink-50 text-stone-500 transition-colors"><ChevronLeft className="w-6 h-6" /></button>
-            <h2 className="text-lg font-bold text-stone-800 tracking-tight">Edit Treasure</h2>
+            <h2 className="text-lg font-bold text-stone-800 tracking-tight">Edit Item</h2>
             <button onClick={() => setShowDeleteConfirm(true)} aria-label="Delete item" className="p-2 -mr-2 rounded-full hover:bg-red-50 text-red-400 transition-colors"><Trash2 className="w-5 h-5" /></button>
           </header>
           <div className="p-5 space-y-5 flex-1 max-w-2xl mx-auto w-full">
