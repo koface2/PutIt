@@ -22,6 +22,12 @@
       "sizes": "512x512",
       "type": "image/webp",
       "purpose": "maskable"
+    },
+    {
+      "src": "/PutIt_Icon_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "/",

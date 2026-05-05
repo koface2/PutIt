@@ -265,15 +265,9 @@ export default function AuthenticatedApp({ user }) {
             <div className="px-1"><h2 className="text-2xl font-extrabold text-stone-800 tracking-tight">New Treasure</h2></div>
             <div className="space-y-5">
               <div className="bg-white p-2.5 rounded-[2rem] shadow-sm border border-pink-50">
-                <div className="relative bg-[#FFFBFB] rounded-[1.5rem] aspect-square sm:aspect-video flex flex-col items-center justify-center border-2 border-dashed border-pink-100 overflow-hidden group">
+                <div className="relative bg-[#FFFBFB] rounded-[1.5rem] aspect-[3/4] flex flex-col items-center justify-center border-2 border-dashed border-pink-100 overflow-hidden">
                   {newItem.imagePreview ? (
-                    <div className="relative w-full h-full group/img">
-                      <img src={newItem.imagePreview} alt="Preview" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-stone-900/30 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity gap-4 backdrop-blur-sm">
-                        <button onClick={() => cameraInputRef.current?.click()} aria-label="Take photo" className="bg-white/90 p-3.5 rounded-full text-pink-500"><Camera className="w-5 h-5" /></button>
-                        <button onClick={() => galleryInputRef.current?.click()} aria-label="Choose from gallery" className="bg-white/90 p-3.5 rounded-full text-pink-500"><ImageIcon className="w-5 h-5" /></button>
-                      </div>
-                    </div>
+                    <img src={newItem.imagePreview} alt="Preview" className="w-full h-full object-contain" />
                   ) : (
                     <div className="flex gap-4 w-full px-6">
                       <button onClick={() => cameraInputRef.current?.click()} className="flex-1 flex flex-col items-center justify-center p-6 bg-white rounded-3xl shadow-sm shadow-pink-100/50 border border-pink-50 text-stone-500 hover:border-pink-200 hover:text-pink-500 transition-all active:scale-95 group/btn">
@@ -289,6 +283,16 @@ export default function AuthenticatedApp({ user }) {
                   <input type="file" accept="image/jpeg, image/png, image/jpg" capture="environment" className="hidden" ref={cameraInputRef} onChange={handlePhotoCapture} />
                   <input type="file" accept="image/*" className="hidden" ref={galleryInputRef} onChange={handlePhotoCapture} />
                 </div>
+                {newItem.imagePreview && (
+                  <div className="flex gap-2 mt-2.5 px-1">
+                    <button onClick={() => cameraInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-2 bg-pink-50 hover:bg-pink-100 text-pink-500 font-bold py-3 rounded-2xl text-[11px] uppercase tracking-widest transition-all active:scale-95">
+                      <Camera className="w-4 h-4" /> Camera
+                    </button>
+                    <button onClick={() => galleryInputRef.current?.click()} className="flex-1 flex items-center justify-center gap-2 bg-pink-50 hover:bg-pink-100 text-pink-500 font-bold py-3 rounded-2xl text-[11px] uppercase tracking-widest transition-all active:scale-95">
+                      <ImageIcon className="w-4 h-4" /> Gallery
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-pink-50 space-y-5">
                 {errorMsg && <div className="bg-red-50 text-red-500 p-3 rounded-xl flex items-center gap-2 text-sm font-semibold animate-in fade-in"><AlertCircle className="w-4 h-4" /> {errorMsg}</div>}
