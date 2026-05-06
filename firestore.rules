@@ -28,6 +28,12 @@ service cloud.firestore {
       }
     }
 
+    // Users collection — stores per-user settings like isPremium.
+    // Each user can only read and write their own document.
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
     // Deny everything else by default (implicit, but explicit for clarity).
     match /{document=**} {
       allow read, write: if false;

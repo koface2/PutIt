@@ -1,10 +1,14 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Camera, Search, Home, Plus, MapPin, Tag, X, Check, Image as ImageIcon, Heart, Loader2, AlertCircle, Trash2, ChevronLeft, Users, Copy, LogOut } from 'lucide-react';
+import { Camera, Search, Home, Plus, MapPin, Tag, X, Check, Image as ImageIcon, Heart, Loader2, AlertCircle, Trash2, ChevronLeft, Users, Copy, LogOut, Sparkles, Lock } from 'lucide-react';
 import { signOut } from 'firebase/auth';
-import { initializeFirestore, persistentLocalCache, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { auth, app } from './firebase.js';
 
 const db = initializeFirestore(app, { localCache: persistentLocalCache() });
+
+const FREE_ITEM_LIMIT = 5;
+// TODO: Replace with your Stripe Payment Link URL (https://dashboard.stripe.com/payment-links)
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/REPLACE_WITH_YOUR_LINK';
 
 const compressImage = (file, maxWidth = 800) => {
   return new Promise((resolve) => {
@@ -29,6 +33,8 @@ const compressImage = (file, maxWidth = 800) => {
 export default function AuthenticatedApp({ user }) {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isPremium, setIsPremium] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const [activeHousehold, setActiveHousehold] = useState(
     () => localStorage.getItem(`household_${user.uid}`) || user.uid
@@ -68,6 +74,25 @@ export default function AuthenticatedApp({ user }) {
     return allTags.filter(t => t.toLowerCase().includes(currentTagInput) && t.toLowerCase() !== currentTagInput);
   }, [currentTagInput, allTags]);
   const locationItems = useMemo(() => activeLocation ? items.filter(i => i.location === activeLocation) : [], [items, activeLocation]);
+
+  // Fetch premium status whenever the active household changes
+  useEffect(() => {
+    getDoc(doc(db, 'users', activeHousehold)).then((snap) => {
+      setIsPremium(snap.exists() && snap.data().isPremium === true);
+    }).catch(() => {});
+  }, [activeHousehold]);
+
+  // Handle return from Stripe payment page: ?upgrade=success
+  // NOTE: For a production app, verify payment server-side with a Stripe webhook + Firebase Cloud Function.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('upgrade') === 'success') {
+      setDoc(doc(db, 'users', user.uid), { isPremium: true }, { merge: true })
+        .then(() => setIsPremium(true))
+        .catch(() => {});
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -148,6 +173,7 @@ export default function AuthenticatedApp({ user }) {
 
   const handleSaveItem = async () => {
     setErrorMsg('');
+    if (!isPremium && items.length >= FREE_ITEM_LIMIT) { setShowUpgradeModal(true); return; }
     if (!newItem.name || !newItem.location) { setErrorMsg("Please provide a name and location! 🌸"); return; }
     setIsSaving(true);
     try {
@@ -377,6 +403,17 @@ export default function AuthenticatedApp({ user }) {
                     )}
                   </div>
                 </div>
+                {!isPremium && (
+                  <div className={`flex items-center justify-center gap-2 text-xs font-bold py-2 px-4 rounded-xl mb-1 ${
+                    items.length >= FREE_ITEM_LIMIT ? 'bg-red-50 text-red-400' : 'bg-pink-50 text-stone-400'
+                  }`}>
+                    <Lock className="w-3 h-3" />
+                    <span>{items.length} of {FREE_ITEM_LIMIT} free items used</span>
+                    {items.length < FREE_ITEM_LIMIT && (
+                      <button onClick={() => setShowUpgradeModal(true)} className="text-pink-500 underline ml-1">Upgrade</button>
+                    )}
+                  </div>
+                )}
                 <button onClick={handleSaveItem} disabled={isSaving} className="w-full bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 transition-all active:scale-[0.98] mt-2 shadow-lg shadow-pink-200/50 disabled:opacity-70">
                   {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
                   {isSaving ? 'Saving...' : 'Save to PutIt'}
@@ -390,7 +427,10 @@ export default function AuthenticatedApp({ user }) {
       <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-sm bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl shadow-pink-100/60 z-50 overflow-hidden border border-pink-50" aria-label="Main navigation">
         <div className="flex justify-around items-center px-4 py-4">
           <button onClick={() => { setActiveTab('home'); setActiveLocation(null); }} aria-label="Home" className={`flex flex-col items-center p-4 rounded-2xl transition-all duration-300 ${activeTab === 'home' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Home className="w-6 h-6" /></button>
-          <button onClick={() => { setActiveTab('add'); setActiveLocation(null); }} aria-label="Add item" className={`flex items-center justify-center p-4 rounded-2xl transition-all duration-300 ${activeTab === 'add' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Plus className="w-7 h-7" /></button>
+          <button onClick={() => {
+            if (!isPremium && items.length >= FREE_ITEM_LIMIT) { setShowUpgradeModal(true); return; }
+            setActiveTab('add'); setActiveLocation(null);
+          }} aria-label="Add item" className={`flex items-center justify-center p-4 rounded-2xl transition-all duration-300 ${activeTab === 'add' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Plus className="w-7 h-7" /></button>
           <button onClick={() => { setActiveTab('search'); setActiveLocation(null); }} aria-label="Search" className={`flex flex-col items-center p-4 rounded-2xl transition-all duration-300 ${activeTab === 'search' ? 'text-white bg-pink-400 shadow-md shadow-pink-200' : 'text-stone-400 hover:text-pink-300 hover:bg-pink-50'}`}><Search className="w-6 h-6" /></button>
         </div>
       </nav>
@@ -510,6 +550,36 @@ export default function AuthenticatedApp({ user }) {
                 {isUpdating ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* UPGRADE MODAL */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-end justify-center p-4" role="dialog" aria-modal="true" aria-label="Upgrade to PutIt Pro" onClick={(e) => { if (e.target === e.currentTarget) setShowUpgradeModal(false); }}>
+          <div className="bg-white rounded-[2rem] w-full max-w-sm p-8 text-center shadow-2xl animate-in slide-in-from-bottom-8 duration-300">
+            <div className="w-16 h-16 bg-gradient-to-br from-pink-400 to-rose-400 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-pink-200">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+            <h2 className="text-2xl font-extrabold text-stone-800 tracking-tight mb-2">Unlock Unlimited Items</h2>
+            <p className="text-stone-500 text-sm mb-6">You've used all {FREE_ITEM_LIMIT} free slots. Upgrade once and track as many items as you'd like — forever.</p>
+            <div className="bg-pink-50 rounded-2xl p-4 mb-6 border border-pink-100">
+              <div className="text-4xl font-extrabold text-stone-800">$1.99</div>
+              <div className="text-xs text-pink-500 font-bold uppercase tracking-widest mt-1">One-Time Purchase · No Subscription</div>
+            </div>
+            <button
+              onClick={() => {
+                const url = `${STRIPE_PAYMENT_LINK}?prefilled_email=${encodeURIComponent(user.email || '')}&client_reference_id=${encodeURIComponent(user.uid)}`;
+                window.location.href = url;
+              }}
+              className="w-full bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-pink-200/50 text-sm tracking-wide mb-3 transition-all active:scale-[0.98]"
+            >
+              <Sparkles className="w-4 h-4" />
+              Upgrade for $1.99
+            </button>
+            <button onClick={() => setShowUpgradeModal(false)} className="w-full text-stone-400 font-semibold py-3 text-sm hover:text-stone-600 transition-colors">
+              Not right now
+            </button>
           </div>
         </div>
       )}
