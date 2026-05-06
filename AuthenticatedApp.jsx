@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Camera, Search, Home, Plus, MapPin, Tag, X, Check, Image as ImageIcon, Heart, Loader2, AlertCircle, Trash2, ChevronLeft, Users, Copy, LogOut, Sparkles, Lock } from 'lucide-react';
-import { signOut } from 'firebase/auth';
+import { signOut, deleteUser } from 'firebase/auth';
 import { initializeFirestore, persistentLocalCache, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { auth, app } from './firebase.js';
 
@@ -35,6 +35,9 @@ export default function AuthenticatedApp({ user }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [isPremium, setIsPremium] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteAccountError, setDeleteAccountError] = useState('');
 
   const [activeHousehold, setActiveHousehold] = useState(
     () => localStorage.getItem(`household_${user.uid}`) || user.uid
@@ -119,6 +122,29 @@ export default function AuthenticatedApp({ user }) {
   }, [activeHousehold]);
 
   const handleLogout = () => { setShowSettings(false); signOut(auth); };
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    setDeleteAccountError('');
+    try {
+      // Delete all items in the household
+      const snap = await import('firebase/firestore').then(m =>
+        m.getDocs(collection(db, 'households', user.uid, 'items'))
+      );
+      await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+      // Delete user document
+      await deleteDoc(doc(db, 'users', user.uid)).catch(() => {});
+      // Delete the Firebase Auth account
+      await deleteUser(auth.currentUser);
+    } catch (err) {
+      if (err.code === 'auth/requires-recent-login') {
+        setDeleteAccountError('For security, please sign out and sign back in before deleting your account.');
+      } else {
+        setDeleteAccountError('Something went wrong. Please try again.');
+      }
+      setIsDeletingAccount(false);
+    }
+  };
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(user.uid);
@@ -502,6 +528,32 @@ export default function AuthenticatedApp({ user }) {
               <button onClick={handleLogout} className="w-full flex justify-center items-center gap-2 border-2 border-red-50 text-red-400 font-bold py-4 rounded-xl mt-4 hover:bg-red-50 transition-colors text-sm">
                 <LogOut className="w-4 h-4" /> Sign Out
               </button>
+            </div>
+
+            {/* Delete Account */}
+            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-pink-50">
+              <h3 className="text-[11px] font-bold text-stone-400 uppercase tracking-widest mb-3">Danger Zone</h3>
+              {!showDeleteAccount ? (
+                <button onClick={() => { setShowDeleteAccount(true); setDeleteAccountError(''); }} className="w-full text-sm text-red-400 font-semibold py-3 rounded-xl hover:bg-red-50 transition-colors">
+                  Delete Account &amp; Data
+                </button>
+              ) : (
+                <div className="space-y-3 animate-in fade-in duration-200">
+                  <p className="text-sm text-stone-600 font-medium text-center">This will permanently delete your account and all your items. This cannot be undone.</p>
+                  {deleteAccountError && (
+                    <div className="bg-red-50 text-red-500 p-3 rounded-xl flex items-center gap-2 text-xs font-semibold">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" /> {deleteAccountError}
+                    </div>
+                  )}
+                  <button onClick={handleDeleteAccount} disabled={isDeletingAccount} className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-xl flex justify-center items-center gap-2 transition-all active:scale-95 disabled:opacity-60 text-sm shadow-md shadow-red-200">
+                    {isDeletingAccount ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    {isDeletingAccount ? 'Deleting…' : 'Yes, Delete Everything'}
+                  </button>
+                  <button onClick={() => { setShowDeleteAccount(false); setDeleteAccountError(''); }} className="w-full text-stone-400 font-semibold py-2 text-sm hover:text-stone-600 transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
