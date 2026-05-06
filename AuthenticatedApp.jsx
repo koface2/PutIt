@@ -8,7 +8,7 @@ const db = initializeFirestore(app, { localCache: persistentLocalCache() });
 
 const FREE_ITEM_LIMIT = 5;
 // TODO: Replace with your Stripe Payment Link URL (https://dashboard.stripe.com/payment-links)
-const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/REPLACE_WITH_YOUR_LINK';
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/7sY3cx2MudEn9J9alLbbG00';
 
 const compressImage = (file, maxWidth = 800) => {
   return new Promise((resolve) => {
