@@ -40,6 +40,7 @@ export default function AuthenticatedApp({ user }) {
   const [syncInput, setSyncInput] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
   const [joinSuccess, setJoinSuccess] = useState(false);
+  const [joinError, setJoinError] = useState('');
 
   const [activeTab, setActiveTab] = useState('home');
   const [items, setItems] = useState([]);
@@ -83,6 +84,11 @@ export default function AuthenticatedApp({ user }) {
       setItems(fetchedItems);
       const uniqueLocations = [...new Set(fetchedItems.map(item => item.location))];
       if (uniqueLocations.length > 0) setLocations(uniqueLocations);
+    }, (error) => {
+      if (error.code === 'permission-denied') {
+        setActiveHousehold(user.uid);
+        localStorage.removeItem(`household_${user.uid}`);
+      }
     });
     return () => unsubscribe();
   }, [activeHousehold]);
@@ -95,18 +101,25 @@ export default function AuthenticatedApp({ user }) {
     setTimeout(() => setCopySuccess(false), 2000);
   };
 
-  const handleJoinHousehold = () => {
+  const handleJoinHousehold = async () => {
     const trimmed = syncInput.trim();
-    if (/^[a-zA-Z0-9_-]{20,}$/.test(trimmed)) {
-      setActiveHousehold(trimmed);
-      localStorage.setItem(`household_${user.uid}`, trimmed);
-      setSyncInput('');
-      setJoinSuccess(true);
-      setTimeout(() => { setJoinSuccess(false); setShowSettings(false); }, 1200);
+    if (!/^[a-zA-Z0-9_-]{20,}$/.test(trimmed)) return;
+    try {
+      await setDoc(doc(db, 'households', trimmed, 'members', user.uid), { joinedAt: Date.now() });
+    } catch {
+      setJoinError('Could not join — check the code and try again.');
+      return;
     }
+    setJoinError('');
+    setActiveHousehold(trimmed);
+    localStorage.setItem(`household_${user.uid}`, trimmed);
+    setSyncInput('');
+    setJoinSuccess(true);
+    setTimeout(() => { setJoinSuccess(false); setShowSettings(false); }, 1200);
   };
 
   const handleLeaveHousehold = () => {
+    deleteDoc(doc(db, 'households', activeHousehold, 'members', user.uid)).catch(() => {});
     setActiveHousehold(user.uid);
     localStorage.removeItem(`household_${user.uid}`);
     setShowSettings(false);
@@ -120,13 +133,17 @@ export default function AuthenticatedApp({ user }) {
 
   const handlePhotoCapture = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      if (imagePreviewUrlRef.current) URL.revokeObjectURL(imagePreviewUrlRef.current);
-      const url = URL.createObjectURL(file);
-      imagePreviewUrlRef.current = url;
-      setNewItem({ ...newItem, imagePreview: url, imageFile: file });
-      setErrorMsg('');
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setErrorMsg('Image is too large. Please choose one under 10 MB.');
+      e.target.value = '';
+      return;
     }
+    if (imagePreviewUrlRef.current) URL.revokeObjectURL(imagePreviewUrlRef.current);
+    const url = URL.createObjectURL(file);
+    imagePreviewUrlRef.current = url;
+    setNewItem({ ...newItem, imagePreview: url, imageFile: file });
+    setErrorMsg('');
   };
 
   const handleSaveItem = async () => {
@@ -137,7 +154,7 @@ export default function AuthenticatedApp({ user }) {
       let secureBase64Image = null;
       if (newItem.imageFile) secureBase64Image = await compressImage(newItem.imageFile);
       const tagsArray = newItem.tags.split(',').map(tag => tag.trim()).filter(Boolean);
-      const itemId = Date.now().toString();
+      const itemId = crypto.randomUUID();
       const itemToSave = { name: newItem.name, location: newItem.location, details: newItem.details, tags: tagsArray, imageUrl: secureBase64Image, createdAt: Date.now() };
       await setDoc(doc(db, 'households', activeHousehold, 'items', itemId), itemToSave);
       if (imagePreviewUrlRef.current) { URL.revokeObjectURL(imagePreviewUrlRef.current); imagePreviewUrlRef.current = null; }
@@ -436,9 +453,10 @@ export default function AuthenticatedApp({ user }) {
                 <div className="pt-4 border-t border-pink-50">
                   <label className="block text-[11px] font-bold text-stone-400 uppercase tracking-widest mb-2">Join a Partner's PutIt</label>
                   <div className="flex gap-2">
-                    <input type="text" placeholder="Paste their Sync Code here" value={syncInput} onChange={(e) => setSyncInput(e.target.value)} className="flex-1 bg-[#FFFBFB] border border-pink-100 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:bg-white text-xs font-semibold text-stone-700 font-mono" />
-                    <button onClick={handleJoinHousehold} disabled={!syncInput.trim()} className={`font-bold px-4 rounded-xl text-xs disabled:opacity-50 transition-colors text-white ${joinSuccess ? 'bg-green-400' : 'bg-stone-800 hover:bg-stone-700'}`}>{joinSuccess ? <Check className="w-4 h-4" /> : 'Join'}</button>
+                    <input type="text" placeholder="Paste their Sync Code here" value={syncInput} onChange={(e) => { setSyncInput(e.target.value); setJoinError(''); }} className="flex-1 bg-[#FFFBFB] border border-pink-100 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:bg-white text-xs font-semibold text-stone-700 font-mono" />
+                    <button onClick={handleJoinHousehold} disabled={!syncInput.trim() || joinSuccess} className={`font-bold px-4 rounded-xl text-xs disabled:opacity-50 transition-colors text-white ${joinSuccess ? 'bg-green-400' : 'bg-stone-800 hover:bg-stone-700'}`}>{joinSuccess ? <Check className="w-4 h-4" /> : 'Join'}</button>
                   </div>
+                  {joinError && <p className="text-xs text-red-500 font-semibold mt-2">{joinError}</p>}
                 </div>
               )}
               <button onClick={handleLogout} className="w-full flex justify-center items-center gap-2 border-2 border-red-50 text-red-400 font-bold py-4 rounded-xl mt-4 hover:bg-red-50 transition-colors text-sm">

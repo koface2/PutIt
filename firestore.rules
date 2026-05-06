@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Returns true if the requester is the household owner (their UID matches
+    // the household document ID) OR is a linked member recorded in Firestore.
+    function isMemberOrOwner(householdId) {
+      return request.auth != null && (
+        request.auth.uid == householdId ||
+        exists(/databases/$(database)/documents/households/$(householdId)/members/$(request.auth.uid))
+      );
+    }
+
+    match /households/{householdId} {
+
+      // Members sub-collection
+      // - Any owner/member can read the members list.
+      // - A user can only add or remove THEMSELVES (prevents impersonation).
+      match /members/{memberId} {
+        allow read: if isMemberOrOwner(householdId);
+        allow create, delete: if request.auth != null && request.auth.uid == memberId;
+      }
+
+      // Items sub-collection
+      // - Read and write permitted only to the owner or linked members.
+      match /items/{itemId} {
+        allow read, write: if isMemberOrOwner(householdId);
+      }
+    }
+
+    // Deny everything else by default (implicit, but explicit for clarity).
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
