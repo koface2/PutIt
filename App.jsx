@@ -3,7 +3,12 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInAnonymously } from 'firebase/auth';
 import { auth } from './firebase.js';
 
-const AuthenticatedApp = lazy(() => import('./AuthenticatedApp.jsx'));
+const AuthenticatedApp = lazy(() =>
+  import('./AuthenticatedApp.jsx').catch(() => {
+    window.location.reload();
+    return new Promise(() => {});
+  })
+);
 
 const Fallback = () => (
   <div className="min-h-screen bg-[#FFFBFB] flex flex-col items-center justify-center text-pink-400">

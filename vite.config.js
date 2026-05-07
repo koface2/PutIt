@@ -10,6 +10,8 @@ export default defineConfig({
       injectRegister: 'script-defer',
       manifest: false,
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,webp,svg,woff2}'],
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [/^\/api\//],
